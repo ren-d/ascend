@@ -6,8 +6,3 @@ project(
 	DESCRIPTION "ascend."
 	LANGUAGES CXX)
 add_subdirectory(src)
-target_link_libraries(
-		rendering PRIVATE
-		d3d12.lib
-		dxgi.lib
-		dxguid.lib)
