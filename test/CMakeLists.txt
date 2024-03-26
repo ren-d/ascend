@@ -1,8 +1,9 @@
+enable_testing()
 include(FetchContent)
 FetchContent_Declare(
 	Catch2
 	GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-	GIT_TAG 	   v3.0.0
+	GIT_TAG 	   v3.4.0
 	)
 FetchContent_MakeAvailable(Catch2)
 add_executable(
@@ -10,7 +11,7 @@ add_executable(
 	"run_test.cpp")
 target_link_libraries(
 	unit_tests
-	PRIVATE sut Catch2::Catch2WithMain)
+	PRIVATE Catch2::Catch2WithMain)
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
 catch_discover_tests(unit_tests)
