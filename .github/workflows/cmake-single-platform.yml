@@ -1,4 +1,4 @@
-name: CMake on a single platform
+name: Build CMake Project and Run Tests
 
 on:
   push:
