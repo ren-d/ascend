@@ -1,4 +1,5 @@
 enable_testing()
+include(CTest)
 include(FetchContent)
 FetchContent_Declare(
 	Catch2
