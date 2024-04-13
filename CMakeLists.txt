@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.5)
 message("ascend.")
 project(
 	ascend 
@@ -6,3 +6,4 @@ project(
 	DESCRIPTION "ascend."
 	LANGUAGES CXX)
 add_subdirectory(src)
+add_subdirectory(test)

@@ -4,4 +4,4 @@ target_link_libraries(
 		ascend PRIVATE
 		d3d12.lib
 		dxgi.lib
-		dxguid.lib)
+)
