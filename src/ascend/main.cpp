@@ -1,10 +1,12 @@
 #include <iostream>
 #include <d3d12.h>
 #include <wrl.h>
+#include "WindowsApplication.h"
 using namespace Microsoft::WRL;
 
-int main()
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
+
 	ComPtr<ID3D12Debug> DebugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 	{
