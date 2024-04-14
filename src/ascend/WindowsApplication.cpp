@@ -1,4 +1,5 @@
 #include "WindowsApplication.h"
+#include "WinUser.h"
 HWND WindowsApplication::m_hwnd = nullptr;
 int WindowsApplication::Run(HINSTANCE hInstance, int nCmdShow)
 {
@@ -44,10 +45,18 @@ int WindowsApplication::Run(HINSTANCE hInstance, int nCmdShow)
     }
 
     // Return this part of the WM_QUIT message to Windows.
-    return 0;
+    return static_cast<char>(msg.wParam);;
 }
 
 LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    return 0;
+    switch (message)
+    {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+
+    // Handle any messages the switch statement didn't.
+    return DefWindowProc(hWnd, message, wParam, lParam);
 }

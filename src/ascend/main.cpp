@@ -6,7 +6,7 @@ using namespace Microsoft::WRL;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-
+	WindowsApplication::Run(hInstance, nCmdShow);
 	ComPtr<ID3D12Debug> DebugController;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&DebugController))))
 	{
