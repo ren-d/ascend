@@ -3,6 +3,7 @@
 												WARNING
 	This whole file needs refactoring, this is currently a spike implemnetation of a D3D12 Renderer
 									The code is therefore very messy.
+		Most of this code is adapted from https://github.com/microsoft/DirectX-Graphics-Samples
  */
 
 // TODO create gloabl throw if failed function
