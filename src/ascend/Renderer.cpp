@@ -1,4 +1,9 @@
 #include "Renderer.h"
+/*
+												WARNING
+	This whole file needs refactoring, this is currently a spike implemnetation of a D3D12 Renderer
+									The code is therefore very messy.
+ */
 
 // TODO create gloabl throw if failed function
 
@@ -12,6 +17,7 @@ Renderer::~Renderer()
 
 HRESULT Renderer::Initialize()
 {
+
 	bool bResult = true;
 
 	ComPtr<ID3D12Debug5> debugController;
@@ -98,11 +104,18 @@ HRESULT Renderer::Initialize()
 	bResult &= SUCCEEDED(device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap)));
 	UINT descriptorHeapSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->GetCPUDescriptorHandleForHeapStart());
+
 	ComPtr<ID3D12Resource2> renderTargets[3];
 	for (UINT n = 0; n < 3; ++n)
 	{
 		bResult &= SUCCEEDED(newSwap->GetBuffer(n, IID_PPV_ARGS(&renderTargets[n])));
+		device->CreateRenderTargetView(renderTargets[n].Get(), nullptr, rtvHandle);
+		rtvHandle.Offset(1, descriptorHeapSize);
 	}
+	ComPtr<ID3D12CommandAllocator> commandAllocator;
+
+	bResult &= SUCCEEDED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
+
 	return 0;
 }
