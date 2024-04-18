@@ -1,6 +1,6 @@
 #pragma once
 #include <Windows.h>
-
+#include "Renderer.h"
 /*  Taken from
  *	https://github.com/microsoft/DirectX-Graphics-Samples/tree/master
  */

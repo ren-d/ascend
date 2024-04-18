@@ -28,9 +28,10 @@ int WindowsApplication::Run(HINSTANCE hInstance, int nCmdShow)
         nullptr,        // We aren't using menus.
         hInstance,
         nullptr);
-
+    Renderer render;
+    render.Initialize();
     ShowWindow(m_hwnd, nCmdShow);
-    
+
     // Main
         // Main sample loop.
     MSG msg = {};
