@@ -36,10 +36,9 @@ source_group(TREE ${DXC_INCLUDE} PREFIX "ThirdParty/DXC" FILES ${DXC_HEADERS})
 target_compile_definitions(ascend PRIVATE D3D12_SDK_VERSION_ID=${SDK_VER})
 target_include_directories(ascend PUBLIC ${CMAKE_CURRENT_LIST_DIR}/Public/ ${AGILITY_INCLUDE} ${DXC_INCLUDE})
 
-
-
 target_link_libraries(ascend PRIVATE d3d12.lib dxgi.lib DXC dxguid.lib)
 
 target_add_asset_directory(ascend ${AGILITY_DLL} "/D3D12")
 target_add_asset_directory(ascend ${DXC_DLL} "/")
 add_definitions(-DUNICODE -D_UNICODE)
+add_compile_definitions(DEBUG)
