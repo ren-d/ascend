@@ -4,6 +4,7 @@
 #include <dxgi1_6.h>
 #include <d3dx12/d3dx12.h> // include d3d
 #include <wrl.h>
+
 #include "WindowsApplication.h"
 using namespace Microsoft::WRL;
 
@@ -14,13 +15,14 @@ namespace RendererPrivate
 }
 
 
-
 class Renderer
 {
 public:
 	Renderer();
 	~Renderer();
 	bool Initialize();
+	void InitPipeline();
+	void LoadAssets();
 	void GetDevice();
 private:
 	ComPtr<ID3D12Device> m_device;
