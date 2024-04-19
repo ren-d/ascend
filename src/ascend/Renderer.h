@@ -32,6 +32,8 @@ private:
 	ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
 	ComPtr<ID3D12Resource2> m_renderTargets[RendererPrivate::MAX_FRAMES];
 	ComPtr<ID3D12CommandQueue> m_commandQueue;
+	ComPtr<ID3D12RootSignature> m_rootSignature;
+	ComPtr<ID3D12PipelineState> m_pipelineState;
 	UINT frameIndex;
 };
 
