@@ -10,7 +10,10 @@ using namespace Microsoft::WRL;
 namespace RendererPrivate
 {
 	constexpr uint8_t MAX_FRAMES = 3;
+
 }
+
+
 
 class Renderer
 {
