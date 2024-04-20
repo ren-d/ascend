@@ -105,7 +105,7 @@ void Renderer::InitPipeline()
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
 	VERIFYD3D12RESULT(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
-	UINT descriptorHeapSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -114,11 +114,12 @@ void Renderer::InitPipeline()
 	{
 		VERIFYD3D12RESULT(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
 		m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
-		rtvHandle.Offset(1, descriptorHeapSize);
+		rtvHandle.Offset(1, m_rtvDescriptorSize);
 	}
 
 	VERIFYD3D12RESULT(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
 }
+
 void Renderer::LoadAssets()
 {
 	// Create Empty root singature
@@ -211,6 +212,60 @@ void Renderer::LoadAssets()
 
 	WaitForGPU();
 }
+
+void Renderer::PopulateCommandList()
+{
+	VERIFYD3D12RESULT(m_commandAllocator->Reset());
+
+	VERIFYD3D12RESULT(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+
+	m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+	m_commandList->RSSetViewports(1, &m_viewport);
+	m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
+	const CD3DX12_RESOURCE_BARRIER presentTransition = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	m_commandList->ResourceBarrier(1, &presentTransition);
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+	m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+	// Record commands.
+	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+	m_commandList->DrawInstanced(3, 1, 0, 0);
+
+	const CD3DX12_RESOURCE_BARRIER backBufferTransition = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+
+	// Indicate that the back buffer will now be used to present.
+	m_commandList->ResourceBarrier(1, &backBufferTransition);
+
+	VERIFYD3D12RESULT(m_commandList->Close());
+}
+
+void Renderer::OnRender()
+{
+	// Record all the commands we need to render the scene into the command list.
+	PopulateCommandList();
+
+	// Execute the command list.
+	ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+	m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	// Present the frame.
+	VERIFYD3D12RESULT(m_swapChain->Present(1, 0));
+
+	WaitForGPU();
+}
+
+void Renderer::OnDestroy()
+{
+	WaitForGPU();
+
+	CloseHandle(m_fenceEvent);
+}
+
 
 void Renderer::WaitForGPU()
 {

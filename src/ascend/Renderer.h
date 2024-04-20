@@ -25,6 +25,9 @@ public:
 	bool Initialize();
 	void InitPipeline();
 	void LoadAssets();
+	void PopulateCommandList();
+	void OnRender();
+	void OnDestroy();
 	void WaitForGPU();
 	void GetDevice();
 private:
@@ -43,6 +46,10 @@ private:
 	ComPtr<ID3D12Resource> m_vertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 
+	CD3DX12_VIEWPORT m_viewport;
+	CD3DX12_RECT m_scissorRect;
+
+	UINT m_rtvDescriptorSize;
 	UINT m_frameIndex;
 	UINT64 m_fenceValues[RendererPrivate::MAX_FRAMES];
 	HANDLE m_fenceEvent;

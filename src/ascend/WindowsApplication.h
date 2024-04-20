@@ -7,7 +7,7 @@
 class WindowsApplication
 {
 public:
-	 static int Run(HINSTANCE hInstance, int nCmdShow);
+	 static int Run(Renderer* renderer, HINSTANCE hInstance, int nCmdShow);
 	 static HWND GetHwnd() { return m_hwnd; }
 
 protected:
