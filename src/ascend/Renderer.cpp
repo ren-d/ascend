@@ -96,7 +96,7 @@ void Renderer::InitPipeline()
 	// TODO: follow d3d12 Samples member variables
 	VERIFYD3D12RESULT(tempSwapChain.As(&m_swapChain)); // seems like you can only create a swapchain1. Therefore to get currentBackbuffer
 
-	UINT frameIndex = m_swapChain->GetCurrentBackBufferIndex(); // DirectX's "MiniEngine" does not do this?
+	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex(); // DirectX's "MiniEngine" does not do this?
 
 	// create descriptor heaps
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
@@ -200,4 +200,29 @@ void Renderer::LoadAssets()
 	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 	m_vertexBufferView.StrideInBytes = sizeof(XMFLOAT3);
 	m_vertexBufferView.SizeInBytes = vertexBufferSize;
+
+	// syncro objects (fences)
+
+	VERIFYD3D12RESULT(m_device->CreateFence(m_fenceValues[m_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+	++m_fenceValues[m_frameIndex];
+
+	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (m_fenceEvent == nullptr)
+	{
+		VERIFYD3D12RESULT(HRESULT_FROM_WIN32(GetLastError()));
+	}
+
+	WaitForGPU();
+}
+
+void Renderer::WaitForGPU()
+{
+	// Schedule Signal command
+	VERIFYD3D12RESULT(m_commandQueue->Signal(m_fence.Get(), m_fenceValues[m_frameIndex]));
+
+	// wait until fence has been processed by the gpu
+	VERIFYD3D12RESULT(m_fence->SetEventOnCompletion(m_fenceValues[m_frameIndex], m_fenceEvent));
+	WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
+
+	++m_fenceValues[m_frameIndex];
 }

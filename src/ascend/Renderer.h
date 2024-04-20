@@ -25,6 +25,7 @@ public:
 	bool Initialize();
 	void InitPipeline();
 	void LoadAssets();
+	void WaitForGPU();
 	void GetDevice();
 private:
 	ComPtr<ID3D12Device> m_device;
@@ -38,10 +39,12 @@ private:
 	ComPtr<ID3D12PipelineState> m_pipelineState;
 	ComPtr<ID3D12CommandAllocator> m_commandAllocator;
 	ComPtr<ID3D12GraphicsCommandList> m_commandList;
-
+	ComPtr<ID3D12Fence> m_fence;
 	ComPtr<ID3D12Resource> m_vertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 
-	UINT frameIndex;
+	UINT m_frameIndex;
+	UINT64 m_fenceValues[RendererPrivate::MAX_FRAMES];
+	HANDLE m_fenceEvent;
 };
 
