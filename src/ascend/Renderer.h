@@ -4,9 +4,11 @@
 #include <dxgi1_6.h>
 #include <d3dx12/d3dx12.h> // include d3d
 #include <wrl.h>
-
+#include <DirectXMath.h>
 #include "WindowsApplication.h"
+
 using namespace Microsoft::WRL;
+using namespace DirectX;
 
 namespace RendererPrivate
 {
@@ -34,6 +36,12 @@ private:
 	ComPtr<ID3D12CommandQueue> m_commandQueue;
 	ComPtr<ID3D12RootSignature> m_rootSignature;
 	ComPtr<ID3D12PipelineState> m_pipelineState;
+	ComPtr<ID3D12CommandAllocator> m_commandAllocator;
+	ComPtr<ID3D12GraphicsCommandList> m_commandList;
+
+	ComPtr<ID3D12Resource> m_vertexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+
 	UINT frameIndex;
 };
 

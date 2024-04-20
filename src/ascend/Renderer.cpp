@@ -8,25 +8,6 @@
 		Most of this code is adapted from https://github.com/microsoft/DirectX-Graphics-Samples
  */
 
-void VerifyD3D12Result(HRESULT D3DResult, const char* code, const char* Filename, INT32 Line)
-{
-	if (FAILED(D3DResult))
-	{
-		char message[60];
-		sprintf(message, "D3D12 ERROR: %s failed at %s:%u\nWith the ERROR %08X \n", code, Filename, Line, (INT32)D3DResult);
-		OutputDebugStringA(message);
-		exit(0);
-	}
-}
-
-#define VERIFYD3D12RESULT(x) \
-{ \
-	HRESULT hr = x; \
-	if(FAILED(hr)) \
-	{ \
-		VerifyD3D12Result(hr, #x, __FILE__, __LINE__); \
-	} \
-}\
 
 Renderer::Renderer()
 {
@@ -135,9 +116,8 @@ void Renderer::InitPipeline()
 		m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
 		rtvHandle.Offset(1, descriptorHeapSize);
 	}
-	ComPtr<ID3D12CommandAllocator> commandAllocator;
 
-	VERIFYD3D12RESULT(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
+	VERIFYD3D12RESULT(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
 }
 void Renderer::LoadAssets()
 {
@@ -159,7 +139,6 @@ void Renderer::LoadAssets()
 #if DEBUG
 	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
-
 
 	VERIFYD3D12RESULT(D3DCompileFromFile(GetShader(L"shaders.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
 	VERIFYD3D12RESULT(D3DCompileFromFile(GetShader(L"shaders.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
@@ -188,4 +167,37 @@ void Renderer::LoadAssets()
 	psoDesc.SampleDesc.Count = 1;
 
 	VERIFYD3D12RESULT(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
+
+	//commandlist
+	VERIFYD3D12RESULT(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), m_pipelineState.Get(), IID_PPV_ARGS(&m_commandList)));
+
+	// Closing command list to not record work
+	VERIFYD3D12RESULT(m_commandList->Close());
+
+	// create vertex buffer
+	XMFLOAT3 trianglePosition[] =
+	{
+
+		{0.0f, 0.25f, 0.0f	},
+		{0.25f, -0.25f, 0.0f},
+		{0.25f, -0.25f, 0.0f}
+	};
+
+	const UINT vertexBufferSize = sizeof(trianglePosition);
+
+	// TODO: Refactor to use Default Heap
+	const CD3DX12_HEAP_PROPERTIES heapProp(D3D12_HEAP_TYPE_UPLOAD);
+	const CD3DX12_RESOURCE_DESC rdesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+
+	VERIFYD3D12RESULT(m_device->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAG_NONE, &rdesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_vertexBuffer)));
+	
+	UINT8* pVertexDataBegin;
+	CD3DX12_RANGE  readRange(0, 0);
+	VERIFYD3D12RESULT(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	memcpy(pVertexDataBegin, trianglePosition, vertexBufferSize);
+	m_vertexBuffer->Unmap(0, nullptr);
+
+	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+	m_vertexBufferView.StrideInBytes = sizeof(XMFLOAT3);
+	m_vertexBufferView.SizeInBytes = vertexBufferSize;
 }

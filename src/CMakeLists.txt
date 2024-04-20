@@ -17,7 +17,7 @@ set_target_properties(DXC PROPERTIES
 
 
 set(SOURCES ascend/main.cpp 
-			ascend/AscendHelpers.h
+			ascend/ascendHelpers.h
 			ascend/Renderer.cpp 
 			ascend/Renderer.h 
 			ascend/WindowsApplication.cpp 
