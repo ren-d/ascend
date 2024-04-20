@@ -28,7 +28,7 @@ public:
 	void WaitForGPU();
 	void GetDevice();
 private:
-	ComPtr<ID3D12Device> m_device;
+	ComPtr<ID3D12Device4> m_device;
 	ComPtr<IDXGIAdapter4> m_adapter;
 
 	ComPtr<IDXGISwapChain4> m_swapChain;

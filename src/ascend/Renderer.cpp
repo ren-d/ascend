@@ -168,11 +168,8 @@ void Renderer::LoadAssets()
 
 	VERIFYD3D12RESULT(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
 
-	//commandlist
-	VERIFYD3D12RESULT(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), m_pipelineState.Get(), IID_PPV_ARGS(&m_commandList)));
-
-	// Closing command list to not record work
-	VERIFYD3D12RESULT(m_commandList->Close());
+	// creates a closed command list
+	VERIFYD3D12RESULT(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_commandList)));
 
 	// create vertex buffer
 	XMFLOAT3 trianglePosition[] =
