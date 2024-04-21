@@ -17,13 +17,9 @@ set_target_properties(DXC PROPERTIES
 
 
 set(SOURCES ascend/main.cpp 
-			ascend/ascend.cpp
-			ascend/ascend.h
+			ascend/ascendCore.cpp
+			ascend/ascendCore.h
 			ascend/ascendHelpers.h
-			ascend/Renderer.cpp 
-			ascend/Renderer.h 
-			ascend/WindowsApplication.cpp 
-			ascend/WindowsApplication.h
 )
 
 set(SHADER_SOURCES ascend/Shader/shaders.hlsl)

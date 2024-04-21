@@ -1,8 +1,8 @@
 #pragma once
+#include <wrl.h>
 
 #include <stdexcept>
 
-using Microsoft::WRL::ComPtr;
 void VerifyD3D12Result(HRESULT D3DResult, const char* code, const char* Filename, INT32 Line)
 {
     if (FAILED(D3DResult))

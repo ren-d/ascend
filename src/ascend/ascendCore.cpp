@@ -1,32 +1,13 @@
-#include "Renderer.h"
+#include "ascendCore.h"
+#include "ascendHelpers.h"
 #include <d3dcompiler.h>
-#include "AscendHelpers.h"
-/*
-												WARNING
-	This whole file needs refactoring, this is currently a spike implemnetation of a D3D12 Renderer
-									The code is therefore very messy.
-		Most of this code is adapted from https://github.com/microsoft/DirectX-Graphics-Samples
- */
-
-
-Renderer::Renderer()
+ascend::ascend() : m_viewport(0.0f, 0.0f, static_cast<LONG>(800), static_cast<LONG>(800)), m_scissorRect(0, 0, 800, 800)
 {
+
 }
-
-Renderer::~Renderer()
+void ascend::Initialize()
 {
-}
-
-bool Renderer::Initialize()
-{
-	bool bResult = true;
-	InitPipeline();
-	LoadAssets();
-	return bResult;
-}
-
-void Renderer::InitPipeline()
-{
+	
 	DWORD dxgiFactoryFlags = 0;
 	ComPtr<ID3D12Debug1> m_debugController;
 #if DEBUG
@@ -77,7 +58,7 @@ void Renderer::InitPipeline()
 
 	// create swap chain
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-	swapChainDesc.BufferCount = RendererPrivate::MAX_FRAMES;
+	swapChainDesc.BufferCount = ascendPrivate::MAX_FRAMES;
 	swapChainDesc.Width = 800;
 	swapChainDesc.Height = 800;
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -89,9 +70,9 @@ void Renderer::InitPipeline()
 	ComPtr<IDXGISwapChain1> tempSwapChain;
 
 	// TODO: Add fullscreen support
-	VERIFYD3D12RESULT(m_factory->CreateSwapChainForHwnd(m_commandQueue.Get(), WindowsApplication::GetHwnd(), &swapChainDesc, nullptr, nullptr, &tempSwapChain));	// use CreateSwapChainForCoreWindow for Windows Store apps
+	VERIFYD3D12RESULT(m_factory->CreateSwapChainForHwnd(m_commandQueue.Get(), hwnd, &swapChainDesc, nullptr, nullptr, &tempSwapChain));	// use CreateSwapChainForCoreWindow for Windows Store apps
 
-	VERIFYD3D12RESULT(m_factory->MakeWindowAssociation(WindowsApplication::GetHwnd(), DXGI_MWA_NO_ALT_ENTER)); // disables full screen
+	VERIFYD3D12RESULT(m_factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER)); // disables full screen
 
 	// TODO: follow d3d12 Samples member variables
 	VERIFYD3D12RESULT(tempSwapChain.As(&m_swapChain)); // seems like you can only create a swapchain1. Therefore to get currentBackbuffer
@@ -100,7 +81,7 @@ void Renderer::InitPipeline()
 
 	// create descriptor heaps
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.NumDescriptors = 3;
+	rtvHeapDesc.NumDescriptors = ascendPrivate::MAX_FRAMES;
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV; // create render target descriptor heap.
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
@@ -109,19 +90,18 @@ void Renderer::InitPipeline()
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
-	ComPtr<ID3D12Resource2> renderTargets[3];
-	for (UINT n = 0; n < RendererPrivate::MAX_FRAMES; ++n)
+	ComPtr<ID3D12Resource> renderTargets[3];
+	for (UINT n = 0; n < ascendPrivate::MAX_FRAMES; ++n)
 	{
 		VERIFYD3D12RESULT(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
 		m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
 		rtvHandle.Offset(1, m_rtvDescriptorSize);
+
+		VERIFYD3D12RESULT(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[n])));
 	}
 
-	VERIFYD3D12RESULT(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
-}
 
-void Renderer::LoadAssets()
-{
+
 	// Create Empty root singature
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -169,40 +149,43 @@ void Renderer::LoadAssets()
 
 	VERIFYD3D12RESULT(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
 
-	// creates a closed command list
-	VERIFYD3D12RESULT(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_commandList)));
+	// Create the command list.
+	VERIFYD3D12RESULT(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocators[m_frameIndex].Get(), m_pipelineState.Get(), IID_PPV_ARGS(&m_commandList)));
 
+	// Command lists are created in the recording state, but there is nothing
+	// to record yet. The main loop expects it to be closed, so close it now.
+	VERIFYD3D12RESULT(m_commandList->Close());
 	// create vertex buffer
-	XMFLOAT3 trianglePosition[] =
+		// Define the geometry for a triangle.
+	float aspect = 800 / 800;
+	Vertex triangleVertices[] =
 	{
-
-		{0.0f, 0.25f, 0.0f	},
-		{0.25f, -0.25f, 0.0f},
-		{0.25f, -0.25f, 0.0f}
+		{ { 0.0f, 0.25f * aspect, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ { 0.25f, -0.25f * aspect, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ { -0.25f, -0.25f * aspect , 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
 	};
-
-	const UINT vertexBufferSize = sizeof(trianglePosition);
+	const UINT vertexBufferSize = sizeof(triangleVertices);
 
 	// TODO: Refactor to use Default Heap
 	const CD3DX12_HEAP_PROPERTIES heapProp(D3D12_HEAP_TYPE_UPLOAD);
 	const CD3DX12_RESOURCE_DESC rdesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
 
 	VERIFYD3D12RESULT(m_device->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAG_NONE, &rdesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_vertexBuffer)));
-	
+
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE  readRange(0, 0);
 	VERIFYD3D12RESULT(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, trianglePosition, vertexBufferSize);
+	memcpy(pVertexDataBegin, triangleVertices, vertexBufferSize);
 	m_vertexBuffer->Unmap(0, nullptr);
 
 	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-	m_vertexBufferView.StrideInBytes = sizeof(XMFLOAT3);
+	m_vertexBufferView.StrideInBytes = sizeof(Vertex);
 	m_vertexBufferView.SizeInBytes = vertexBufferSize;
 
 	// syncro objects (fences)
 
 	VERIFYD3D12RESULT(m_device->CreateFence(m_fenceValues[m_frameIndex], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-	++m_fenceValues[m_frameIndex];
+	m_fenceValues[m_frameIndex]++;
 
 	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (m_fenceEvent == nullptr)
@@ -212,12 +195,11 @@ void Renderer::LoadAssets()
 
 	WaitForGPU();
 }
-
-void Renderer::PopulateCommandList()
+void ascend::PopulateCommandList()
 {
-	VERIFYD3D12RESULT(m_commandAllocator->Reset());
+	VERIFYD3D12RESULT(m_commandAllocators[m_frameIndex]->Reset());
 
-	VERIFYD3D12RESULT(m_commandList->Reset(m_commandAllocator.Get(), nullptr));
+	VERIFYD3D12RESULT(m_commandList->Reset(m_commandAllocators[m_frameIndex].Get(), m_pipelineState.Get()));
 
 	m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
 	m_commandList->RSSetViewports(1, &m_viewport);
@@ -236,6 +218,7 @@ void Renderer::PopulateCommandList()
 	m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 	m_commandList->DrawInstanced(3, 1, 0, 0);
 
+
 	const CD3DX12_RESOURCE_BARRIER backBufferTransition = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
 	// Indicate that the back buffer will now be used to present.
@@ -244,7 +227,7 @@ void Renderer::PopulateCommandList()
 	VERIFYD3D12RESULT(m_commandList->Close());
 }
 
-void Renderer::OnRender()
+void ascend::OnRender()
 {
 	// Record all the commands we need to render the scene into the command list.
 	PopulateCommandList();
@@ -256,25 +239,43 @@ void Renderer::OnRender()
 	// Present the frame.
 	VERIFYD3D12RESULT(m_swapChain->Present(1, 0));
 
-	WaitForGPU();
+	MoveToNextFrame();
 }
 
-void Renderer::OnDestroy()
+void ascend::OnDestroy()
 {
+	// Ensure that the GPU is no longer referencing resources that are about to be
+// cleaned up by the destructor.
 	WaitForGPU();
 
 	CloseHandle(m_fenceEvent);
 }
 
-
-void Renderer::WaitForGPU()
+void ascend::WaitForGPU()
 {
-	// Schedule Signal command
+	// Schedule a Signal command in the queue.
 	VERIFYD3D12RESULT(m_commandQueue->Signal(m_fence.Get(), m_fenceValues[m_frameIndex]));
 
-	// wait until fence has been processed by the gpu
+	// Wait until the fence has been processed.
 	VERIFYD3D12RESULT(m_fence->SetEventOnCompletion(m_fenceValues[m_frameIndex], m_fenceEvent));
 	WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
 
-	++m_fenceValues[m_frameIndex];
+	// Increment the fence value for the current frame.
+	m_fenceValues[m_frameIndex]++;
+}
+void ascend::MoveToNextFrame()
+{
+	const UINT64 currentFenceValue = m_fenceValues[m_frameIndex];
+	// Schedule Signal command
+	VERIFYD3D12RESULT(m_commandQueue->Signal(m_fence.Get(), m_fenceValues[m_frameIndex]));
+
+	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+
+	// If the next frame is not ready to be rendered yet, wait until it is ready.
+	if (m_fence->GetCompletedValue() < m_fenceValues[m_frameIndex])
+	{
+		VERIFYD3D12RESULT(m_fence->SetEventOnCompletion(m_fenceValues[m_frameIndex], m_fenceEvent));
+		WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
+	}
+	m_fenceValues[m_frameIndex] = currentFenceValue + 1;
 }
