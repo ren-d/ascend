@@ -16,10 +16,12 @@ set_target_properties(DXC PROPERTIES
 )
 
 
-set(SOURCES ascend/main.cpp 
-			ascend/ascendCore.cpp
-			ascend/ascendCore.h
-			ascend/ascendHelpers.h
+set(SOURCES	ascend/Windows/EntryPoint.cpp
+			ascend/Windows/Application.cpp 
+			ascend/Windows/Application.h
+			ascend/Windows/RHI/D3D12Core.h
+			ascend/Windows/RHI/D3D12Core.cpp
+			ascend/Windows/RHI/ascendHelpers.h
 )
 
 set(SHADER_SOURCES ascend/Shader/shaders.hlsl)

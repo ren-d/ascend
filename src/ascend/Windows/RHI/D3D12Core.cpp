@@ -1,4 +1,4 @@
-#include "ascendCore.h"
+#include "D3D12Core.h"
 #include "ascendHelpers.h"
 #include <d3dcompiler.h>
 ascend::ascend() : m_viewport(0.0f, 0.0f, static_cast<LONG>(800), static_cast<LONG>(800)), m_scissorRect(0, 0, 800, 800)

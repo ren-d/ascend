@@ -1,14 +1,14 @@
-#include "ascendCore.h"
-//#include "WindowsApplication.h"
+// includes WinMain
+#include "RHI/D3D12Core.h"
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 int Run(HINSTANCE hInstance, int nCmdShow, ascend* ascend_);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-	std::cout << "ascend." << std::endl;
+    std::cout << "ascend." << std::endl;
     ascend ascend_2;
     Run(hInstance, nCmdShow, &ascend_2);
-	return 0;
+    return 0;
 }
 
 int Run(HINSTANCE hInstance, int nCmdShow, ascend* ascend_)
